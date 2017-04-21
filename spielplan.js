@@ -170,7 +170,18 @@ function getGames() {
 function gamesPerPlayer(games) {
     var mapPlayerToGames = {}
 
-    //for(var p in players)
+    for(var p in players) {
+        mapPlayerToGames[p.id] = 0
+    }
+
+    for(var g in games) {
+        mapPlayerToGames[g.white[0]]++
+        mapPlayerToGames[g.white[1]]++
+        mapPlayerToGames[g.black[0]]++
+        mapPlayerToGames[g.black[1]]++
+    }
+
+    return mapPlayerToGames
 }
 
 var isNotTopeLevelArray = false
@@ -182,4 +193,7 @@ function stringify(k,v){
     return v;
 }
 
-console.log(JSON.stringify(getGames(), stringify, '  '))
+var gamePlan = getGames()
+console.log(JSON.stringify(gamePlan, stringify, '  '))
+//console.log(JSON.stringify(gamesPerPlayer(gamePlan)))
+
