@@ -1,13 +1,14 @@
 'use strict'
 
 var numPlayers = 10,
-    numGames = 24
-
-var gameIndex = 0
-
-var players
+    numGames = 20,
+    gameIndex = 0,
+    players,
+    playerQueue
 
 var mapPlayersWithWhomTheyPlayedAlready = new Array(numPlayers)
+
+var skippedPlayers = []
 
 
 function createPlayers(number) {
@@ -25,11 +26,11 @@ function createPlayers(number) {
     return players
 }
 
-function createGame(players) {
+function createGame(gamePlayers) {
     gameIndex++
     return {
-        white: [players[0], players[1]],
-        black: [players[2], players[3]],
+        white: [gamePlayers[0], gamePlayers[1]],
+        black: [gamePlayers[2], gamePlayers[3]],
         gameIndex: gameIndex
     }
 }
@@ -43,44 +44,83 @@ function playerIsInGame(player, game) {
 }
 
 function removePlayerAtPos(pos ) {
-    return players.splice(pos, 1)[0];
+    return playerQueue.splice(pos, 1)[0];
 }
 
-function hasSamePlayerInMyTeamAgain(players, me) {
-    var myIndex = players.length
+function removeAllWithValueFrom(value, array) {
+    for(var i in array) {
+        if(array[i] == value) {
+            array.splice(i, 1);
+            break;
+        }
+    }
+}
+
+
+function hasSamePlayerInMyTeamAgain(gamePlayerIds, me) {
+    var myIndex = gamePlayerIds.length
+    const threshold = 5
 
     // cannot happen because array is not filled that far yet
     //if(myIndex == 0 && mapPlayersWithWhomTheyPlayedAlready[me.id].includes(players[1].id))
         //return true
-    if(myIndex == 1 && mapPlayersWithWhomTheyPlayedAlready[me.id].includes(players[0].id))
+
+    if(!me) {
+        console.log(gamePlayerIds)
+        console.log(me)
+    }
+
+    if(myIndex == 1 && (mapPlayersWithWhomTheyPlayedAlready[me.id].includes(gamePlayerIds[0])
+                    ||  mapPlayersWithWhomTheyPlayedAlready[gamePlayerIds[0]].includes(me.id))){
+
+        if(mapPlayersWithWhomTheyPlayedAlready[me.id] > threshold)
+            return false
+
+        skippedPlayers.push(me.id)
         return true
+    }
     // cannot happen because array is not filled that far yet
     //else if(myIndex == 2 && mapPlayersWithWhomTheyPlayedAlready[me.id].includes(players[3].id))
         //return true
-    else if(myIndex == 3 && mapPlayersWithWhomTheyPlayedAlready[me.id].includes(players[2].id))
+    else if(myIndex == 3 && mapPlayersWithWhomTheyPlayedAlready[me.id].includes(gamePlayerIds[2])){
+
+        if(mapPlayersWithWhomTheyPlayedAlready[me.id] > threshold)
+            return false
+
+        skippedPlayers.push(me.id)
         return true
+    }
 
     return false
 }
 
 function getBestPlayerForGame(playersInGame) {
     var pos = 0,
-        player = null
+        player = null,
+        usedSkippedPlayer = false
 
     while (player == null) {
-        if(! playersInGame.includes(players[pos])){
-            if(! hasSamePlayerInMyTeamAgain(playersInGame, players[pos]))
+
+        if(! playersInGame.includes(playerQueue[pos].id)){
+            if(! hasSamePlayerInMyTeamAgain(playersInGame, playerQueue[pos]))
                 player = removePlayerAtPos(pos)
         }
 
         pos++
-        if(pos > players.length) {
-            console.error("No best player for game found... Array out of bounds")
-            break;
+        if(pos >= playerQueue.length) {
+            var playerId = skippedPlayers.splice(0, 1)[0]
+            removeAllWithValueFrom(playerId, skippedPlayers)
+            player = players[playerId]
+            usedSkippedPlayer = true
+
+            //pos = 0
+            console.error("No best player for game found... Using player from skipped list with id: " + player.id)
+            continue;
         }
     }
 
-    players.push(player)
+    if(! usedSkippedPlayer)
+        playerQueue.push(player)
     return player
 }
 
@@ -90,8 +130,8 @@ function addPlayersToPlayedWithMap(gamePlayersIds) {
             if(i == k)
                 continue
 
-            //console.log(JSON.stringify(mapPlayersWithWhomTheyPlayedAlready))
-            //console.log(gamePlayersIds[i])
+            console.log(JSON.stringify(mapPlayersWithWhomTheyPlayedAlready))
+            console.log(gamePlayersIds[i])
 
             mapPlayersWithWhomTheyPlayedAlready[gamePlayersIds[i]].push(gamePlayersIds[k])
         }
@@ -99,8 +139,8 @@ function addPlayersToPlayedWithMap(gamePlayersIds) {
 }
 
 function getGames() {
-    players = createPlayers(numPlayers);
-    console.log(players)
+    playerQueue = players = createPlayers(numPlayers);
+    console.log(playerQueue)
 
     var games = []
 
@@ -109,6 +149,10 @@ function getGames() {
 
         for(var k = 0; k < 4; k++) {
             var bestPlayer = getBestPlayerForGame(gamePlayers)
+
+            if(! bestPlayer) {
+                console.log("Invalid player returned...")
+            }
 
             gamePlayers.push(bestPlayer.id)
         }
@@ -122,6 +166,12 @@ function getGames() {
 }
 
 /****  -------------- PRINT AND RUN ------------------- ****/
+
+function gamesPerPlayer(games) {
+    var mapPlayerToGames = {}
+
+    //for(var p in players)
+}
 
 var isNotTopeLevelArray = false
 function stringify(k,v){
