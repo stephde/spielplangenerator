@@ -1,7 +1,7 @@
 'use strict'
 
 var numPlayers = 10,
-    numGames = 20,
+    numGames = 18,
     gameIndex = 0,
     players,
     playerQueue
@@ -108,9 +108,14 @@ function getBestPlayerForGame(playersInGame) {
 
         pos++
         if(pos >= playerQueue.length) {
-            var playerId = skippedPlayers.splice(0, 1)[0]
-            removeAllWithValueFrom(playerId, skippedPlayers)
-            player = players[playerId]
+            while(player == null) {
+                var playerId = skippedPlayers.splice(0, 1)[0]
+                if(playersInGame.includes(playerId))
+                    continue;
+
+                removeAllWithValueFrom(playerId, skippedPlayers)
+                player = players[playerId]
+            }
             usedSkippedPlayer = true
 
             //pos = 0
@@ -130,8 +135,8 @@ function addPlayersToPlayedWithMap(gamePlayersIds) {
             if(i == k)
                 continue
 
-            console.log(JSON.stringify(mapPlayersWithWhomTheyPlayedAlready))
-            console.log(gamePlayersIds[i])
+            //console.log(JSON.stringify(mapPlayersWithWhomTheyPlayedAlready))
+            //console.log(gamePlayersIds[i])
 
             mapPlayersWithWhomTheyPlayedAlready[gamePlayersIds[i]].push(gamePlayersIds[k])
         }
@@ -168,18 +173,18 @@ function getGames() {
 /****  -------------- PRINT AND RUN ------------------- ****/
 
 function gamesPerPlayer(games) {
-    var mapPlayerToGames = {}
+    var mapPlayerToGames = new Array()
 
     for(var p in players) {
-        mapPlayerToGames[p.id] = 0
+        mapPlayerToGames.push(0)
     }
 
-    for(var g in games) {
+    games.forEach(function (g) {
         mapPlayerToGames[g.white[0]]++
         mapPlayerToGames[g.white[1]]++
         mapPlayerToGames[g.black[0]]++
         mapPlayerToGames[g.black[1]]++
-    }
+    })
 
     return mapPlayerToGames
 }
@@ -195,5 +200,5 @@ function stringify(k,v){
 
 var gamePlan = getGames()
 console.log(JSON.stringify(gamePlan, stringify, '  '))
-//console.log(JSON.stringify(gamesPerPlayer(gamePlan)))
+console.log("games per player: " + JSON.stringify(gamesPerPlayer(gamePlan)))
 
